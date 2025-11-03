@@ -1,0 +1,20 @@
+{
+  "name": "hohocobot",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "깃랩 이슈 관리와 디스코드를 연동하여 팀 전체가 개발 현황을 실시간으로 공유할 수 있도록 자동화",
+  "dependencies": {
+    "discord.js": "^14.24.2",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0"
+  }
+}
