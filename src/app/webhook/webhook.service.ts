@@ -29,6 +29,8 @@ export class WebhookService {
       return await this.handleIssueClose(event);
     } else if (action === 'reopen') {
       return await this.handleIssueReopen(event);
+    } else if (action === 'destroy') {
+      return await this.handleIssueDelete(event);
     } else {
       return { message: `Unsupported action: ${action}` };
     }
@@ -256,6 +258,47 @@ ${issue.description || '*(설명 없음)*'}
       };
     } catch (error) {
       this.logger.error('❌ 이슈 재오픈 처리 중 오류:', error);
+      throw error;
+    }
+  }
+
+  private async handleIssueDelete(event: any) {
+    this.logger.log(
+      `🗑️ 이슈 삭제 이벤트 수신: ${event.object_attributes.title}`,
+    );
+
+    try {
+      const issue = event.object_attributes;
+      const project = event.project;
+
+      // DB에서 매핑 조회
+      const mapping = await IssueMappingEntity.findByGitlabIssue(
+        project.id,
+        issue.iid,
+      );
+
+      if (!mapping) {
+        this.logger.warn(
+          `⚠️ 매핑 정보 없음: GitLab(${project.id}/${issue.iid})`,
+        );
+        return { message: 'No mapping found for this issue' };
+      }
+
+      // Discord 스레드 삭제
+      await this.discordService.deleteThread(mapping.discordThreadId);
+
+      // DB 매핑 삭제
+      await mapping.delete();
+
+      this.logger.log(
+        `✅ 이슈 삭제 처리 완료: GitLab(${project.id}/${issue.iid}) → Discord(${mapping.discordThreadId})`,
+      );
+
+      return {
+        message: 'Issue deleted successfully',
+      };
+    } catch (error) {
+      this.logger.error('❌ 이슈 삭제 처리 중 오류:', error);
       throw error;
     }
   }

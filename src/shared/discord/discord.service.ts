@@ -91,4 +91,22 @@ export class DiscordService {
       throw error;
     }
   }
+
+  async deleteThread(threadId: string): Promise<void> {
+    const client = this.discordBot.getClient();
+
+    try {
+      const thread = await client.channels.fetch(threadId);
+
+      if (!thread || !thread.isThread()) {
+        throw new Error('스레드를 찾을 수 없거나 스레드가 아닙니다.');
+      }
+
+      await thread.delete();
+      this.logger.log(`✅ 스레드 삭제 완료: ${threadId}`);
+    } catch (error) {
+      this.logger.error('❌ 스레드 삭제 실패:', error);
+      throw error;
+    }
+  }
 }

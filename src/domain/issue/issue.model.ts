@@ -85,4 +85,15 @@ export class IssueMappingEntity {
       .returning();
     return IssueMappingEntity.fromRaw(raw);
   }
+
+  async delete(): Promise<void> {
+    await DrizzleContext.db()
+      .delete(issueMappingTable)
+      .where(
+        and(
+          eq(issueMappingTable.gitlabProjectId, this.gitlabProjectId),
+          eq(issueMappingTable.gitlabIssueId, this.gitlabIssueId),
+        ),
+      );
+  }
 }
