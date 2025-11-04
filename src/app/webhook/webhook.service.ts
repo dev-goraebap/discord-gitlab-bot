@@ -183,8 +183,7 @@ ${issue.description || '*(설명 없음)*'}
         .addFields({
           name: '링크',
           value: `[깃렙에서 이슈 보기](${issue.url})`,
-        })
-        .setTimestamp();
+        });
 
       // Discord 스레드에 Embed 전송
       await this.discordService.sendThreadEmbed(
@@ -239,8 +238,7 @@ ${issue.description || '*(설명 없음)*'}
         .addFields({
           name: '링크',
           value: `[깃렙에서 이슈 보기](${issue.url})`,
-        })
-        .setTimestamp();
+        });
 
       // Discord 스레드에 Embed 전송
       await this.discordService.sendThreadEmbed(
