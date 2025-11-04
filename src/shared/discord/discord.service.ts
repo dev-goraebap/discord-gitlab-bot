@@ -38,4 +38,22 @@ export class DiscordService {
       throw error;
     }
   }
+
+  async sendThreadMessage(threadId: string, content: string): Promise<void> {
+    const client = this.discordBot.getClient();
+
+    try {
+      const thread = await client.channels.fetch(threadId);
+
+      if (!thread || !thread.isThread()) {
+        throw new Error('스레드를 찾을 수 없거나 스레드가 아닙니다.');
+      }
+
+      await thread.send(content);
+      this.logger.log(`✅ 스레드 메시지 전송 완료: ${threadId}`);
+    } catch (error) {
+      this.logger.error('❌ 스레드 메시지 전송 실패:', error);
+      throw error;
+    }
+  }
 }
