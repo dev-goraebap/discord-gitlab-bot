@@ -15,6 +15,7 @@ export const issueMappingTable = pgTable(
     discordThreadId: text('discord_thread_id').notNull(),
     gitlabAuthorId: integer('gitlab_author_id'),
     gitlabAuthorName: text('gitlab_author_name'),
+    state: text('state').notNull().default('opened'),
     createdAt: timestamp('created_at').default(sql`CURRENT_TIMESTAMP`),
   },
   (table) => ({

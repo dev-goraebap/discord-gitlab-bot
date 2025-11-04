@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { EmbedBuilder } from 'discord.js';
 import { DiscordService } from 'src/shared/discord';
 import { IssueMappingEntity } from 'src/domain/issue';
 
@@ -24,6 +25,10 @@ export class WebhookService {
       return await this.handleIssueCreate(event);
     } else if (action === 'update') {
       return await this.handleIssueUpdate(event);
+    } else if (action === 'close') {
+      return await this.handleIssueClose(event);
+    } else if (action === 'reopen') {
+      return await this.handleIssueReopen(event);
     } else {
       return { message: `Unsupported action: ${action}` };
     }
@@ -141,6 +146,118 @@ ${issue.description || '*(설명 없음)*'}
       };
     } catch (error) {
       this.logger.error('❌ 이슈 업데이트 처리 중 오류:', error);
+      throw error;
+    }
+  }
+
+  private async handleIssueClose(event: any) {
+    this.logger.log(
+      `🔒 이슈 종료 이벤트 수신: ${event.object_attributes.title}`,
+    );
+
+    try {
+      const issue = event.object_attributes;
+      const project = event.project;
+
+      // DB에서 매핑 조회
+      const mapping = await IssueMappingEntity.findByGitlabIssue(
+        project.id,
+        issue.iid,
+      );
+
+      if (!mapping) {
+        this.logger.warn(
+          `⚠️ 매핑 정보 없음: GitLab(${project.id}/${issue.iid})`,
+        );
+        return { message: 'No mapping found for this issue' };
+      }
+
+      // DB 상태 업데이트
+      await mapping.updateState('closed');
+
+      // Discord Embed 생성
+      const embed = new EmbedBuilder()
+        .setColor(0xff0000) // 빨간색
+        .setTitle('🔒 이슈 종료')
+        .setDescription('이슈가 종료되었습니다.')
+        .addFields({
+          name: '링크',
+          value: `[깃렙에서 이슈 보기](${issue.url})`,
+        })
+        .setTimestamp();
+
+      // Discord 스레드에 Embed 전송
+      await this.discordService.sendThreadEmbed(
+        mapping.discordThreadId,
+        embed,
+      );
+
+      this.logger.log(
+        `✅ 이슈 종료 알림 전송 완료: GitLab(${project.id}/${issue.iid})`,
+      );
+
+      return {
+        message: 'Issue closed notification sent successfully',
+        threadId: mapping.discordThreadId,
+      };
+    } catch (error) {
+      this.logger.error('❌ 이슈 종료 처리 중 오류:', error);
+      throw error;
+    }
+  }
+
+  private async handleIssueReopen(event: any) {
+    this.logger.log(
+      `🔓 이슈 재오픈 이벤트 수신: ${event.object_attributes.title}`,
+    );
+
+    try {
+      const issue = event.object_attributes;
+      const project = event.project;
+
+      // DB에서 매핑 조회
+      const mapping = await IssueMappingEntity.findByGitlabIssue(
+        project.id,
+        issue.iid,
+      );
+
+      if (!mapping) {
+        this.logger.warn(
+          `⚠️ 매핑 정보 없음: GitLab(${project.id}/${issue.iid})`,
+        );
+        return { message: 'No mapping found for this issue' };
+      }
+
+      // DB 상태 업데이트
+      await mapping.updateState('opened');
+
+      // Discord Embed 생성
+      const embed = new EmbedBuilder()
+        .setColor(0x00ff00) // 초록색
+        .setTitle('🔓 이슈 재오픈')
+        .setDescription('이슈가 다시 열렸습니다.')
+        .addFields({
+          name: '링크',
+          value: `[깃렙에서 이슈 보기](${issue.url})`,
+        })
+        .setTimestamp();
+
+      // Discord 스레드에 Embed 전송
+      await this.discordService.sendThreadEmbed(
+        mapping.discordThreadId,
+        embed,
+      );
+
+      this.logger.log(
+        `✅ 이슈 재오픈 알림 전송 완료: GitLab(${project.id}/${issue.iid})`,
+      );
+
+      return {
+        message: 'Issue reopened notification sent successfully',
+        threadId: mapping.discordThreadId,
+      };
+    } catch (error) {
+      this.logger.error('❌ 이슈 재오픈 처리 중 오류:', error);
       throw error;
     }
   }

@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { EmbedBuilder } from 'discord.js';
 import { DiscordBot } from './discord.bot';
 
 @Injectable()
@@ -69,6 +70,24 @@ export class DiscordService {
       this.logger.log(`✅ 포럼 포스트 수정 완료: ${thread.name}`);
     } catch (error) {
       this.logger.error('❌ 포럼 포스트 수정 실패:', error);
+      throw error;
+    }
+  }
+
+  async sendThreadEmbed(threadId: string, embed: EmbedBuilder): Promise<void> {
+    const client = this.discordBot.getClient();
+
+    try {
+      const thread = await client.channels.fetch(threadId);
+
+      if (!thread || !thread.isThread()) {
+        throw new Error('스레드를 찾을 수 없거나 스레드가 아닙니다.');
+      }
+
+      await thread.send({ embeds: [embed] });
+      this.logger.log(`✅ 스레드 Embed 메시지 전송 완료: ${threadId}`);
+    } catch (error) {
+      this.logger.error('❌ 스레드 Embed 메시지 전송 실패:', error);
       throw error;
     }
   }

@@ -15,6 +15,7 @@ export class IssueMappingEntity {
   readonly discordThreadId!: string;
   readonly gitlabAuthorId!: number | null;
   readonly gitlabAuthorName!: string | null;
+  readonly state!: string;
   readonly createdAt!: Date | null;
 
   static create(param: CreateIssueMappingParam): IssueMappingEntity {
@@ -24,6 +25,7 @@ export class IssueMappingEntity {
       discordThreadId: param.discordThreadId,
       gitlabAuthorId: param.gitlabAuthorId,
       gitlabAuthorName: param.gitlabAuthorName,
+      state: 'opened',
       createdAt: new Date(),
     } satisfies Partial<IssueMappingEntity>);
   }
@@ -37,6 +39,7 @@ export class IssueMappingEntity {
       discordThreadId: data.discordThreadId,
       gitlabAuthorId: data.gitlabAuthorId,
       gitlabAuthorName: data.gitlabAuthorName,
+      state: data.state,
       createdAt: data.createdAt,
     } satisfies Partial<IssueMappingEntity>);
   }
@@ -63,7 +66,22 @@ export class IssueMappingEntity {
         discordThreadId: this.discordThreadId,
         gitlabAuthorId: this.gitlabAuthorId,
         gitlabAuthorName: this.gitlabAuthorName,
+        state: this.state,
       })
+      .returning();
+    return IssueMappingEntity.fromRaw(raw);
+  }
+
+  async updateState(newState: 'opened' | 'closed'): Promise<IssueMappingEntity> {
+    const [raw] = await DrizzleContext.db()
+      .update(issueMappingTable)
+      .set({ state: newState })
+      .where(
+        and(
+          eq(issueMappingTable.gitlabProjectId, this.gitlabProjectId),
+          eq(issueMappingTable.gitlabIssueId, this.gitlabIssueId),
+        ),
+      )
       .returning();
     return IssueMappingEntity.fromRaw(raw);
   }
