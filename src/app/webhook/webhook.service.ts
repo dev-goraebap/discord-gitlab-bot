@@ -1,5 +1,6 @@
-import {Injectable, Logger} from '@nestjs/common';
-import {DiscordService} from 'src/shared/discord';
+import { Injectable, Logger } from '@nestjs/common';
+import { DiscordService } from 'src/shared/discord';
+import { IssueMappingEntity } from 'src/domain/issue';
 
 @Injectable()
 export class WebhookService {
@@ -45,6 +46,20 @@ export class WebhookService {
       // 포럼 스레드 생성
       const threadId =
         await this.discordService.createForumPost(threadTitle, threadContent);
+
+      // DB에 매핑 저장
+      const mapping = IssueMappingEntity.create({
+        gitlabProjectId: repository.id,
+        gitlabIssueId: issue.iid,
+        discordThreadId: threadId,
+        gitlabAuthorId: user.id,
+        gitlabAuthorName: user.name,
+      });
+      await mapping.save();
+
+      this.logger.log(
+        `✅ DB 매핑 저장 완료: GitLab(${repository.id}/${issue.iid}) → Discord(${threadId})`,
+      );
 
       return {
         message: 'Issue posted to forum successfully',
