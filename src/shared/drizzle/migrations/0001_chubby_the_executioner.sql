@@ -1,0 +1,1 @@
+ALTER TABLE "issue_mapping" ADD COLUMN "state" text DEFAULT 'opened' NOT NULL;
