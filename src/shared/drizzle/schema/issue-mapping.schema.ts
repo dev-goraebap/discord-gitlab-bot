@@ -1,4 +1,10 @@
-import { integer, pgTable, primaryKey, text, timestamp } from 'drizzle-orm/pg-core';
+import {
+  integer,
+  pgTable,
+  primaryKey,
+  text,
+  timestamp,
+} from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
 export const issueMappingTable = pgTable(

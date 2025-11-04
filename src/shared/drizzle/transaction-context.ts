@@ -9,7 +9,10 @@ export class TransactionContext {
   // DRIZZLE 의존성 제거 - 순환 의존성 방지
   constructor() {}
 
-  async runInTransaction<T>(db: DrizzleOrm, callback: () => Promise<T>): Promise<T> {
+  async runInTransaction<T>(
+    db: DrizzleOrm,
+    callback: () => Promise<T>,
+  ): Promise<T> {
     return await db.transaction(async (tx) => {
       return await this.als.run(tx, callback);
     });

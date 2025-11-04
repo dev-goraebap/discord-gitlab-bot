@@ -1,7 +1,11 @@
 import { Global, Inject, Module, OnModuleInit } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ExtractTablesWithRelations } from 'drizzle-orm';
-import { drizzle, NodePgDatabase, NodePgQueryResultHKT } from 'drizzle-orm/node-postgres';
+import {
+  drizzle,
+  NodePgDatabase,
+  NodePgQueryResultHKT,
+} from 'drizzle-orm/node-postgres';
 import { PgTransaction } from 'drizzle-orm/pg-core';
 import { Pool, PoolConfig } from 'pg';
 
@@ -10,7 +14,11 @@ import * as schema from './schema';
 
 export const DRIZZLE = Symbol('DRIZZLE');
 export type DrizzleOrm = NodePgDatabase<typeof schema>;
-export type DrizzleTransaction = PgTransaction<NodePgQueryResultHKT, typeof schema, ExtractTablesWithRelations<typeof schema>>;
+export type DrizzleTransaction = PgTransaction<
+  NodePgQueryResultHKT,
+  typeof schema,
+  ExtractTablesWithRelations<typeof schema>
+>;
 
 @Global()
 @Module({
@@ -42,7 +50,7 @@ export type DrizzleTransaction = PgTransaction<NodePgQueryResultHKT, typeof sche
   exports: [],
 })
 export class DrizzleModule implements OnModuleInit {
-  constructor(@Inject(DRIZZLE) private database: DrizzleOrm) { }
+  constructor(@Inject(DRIZZLE) private database: DrizzleOrm) {}
 
   onModuleInit() {
     DrizzleContext.initialize(this.database);

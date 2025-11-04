@@ -47,8 +47,10 @@ ${issue.description || '*(설명 없음)*'}
 `.trim();
 
       // 포럼 스레드 생성
-      const threadId =
-        await this.discordService.createForumPost(threadTitle, threadContent);
+      const threadId = await this.discordService.createForumPost(
+        threadTitle,
+        threadContent,
+      );
 
       // 디버그: threadId 확인
       this.logger.debug('✅ 생성된 threadId:', threadId);

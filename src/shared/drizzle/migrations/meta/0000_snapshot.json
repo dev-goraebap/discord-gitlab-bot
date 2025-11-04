@@ -51,10 +51,7 @@
       "compositePrimaryKeys": {
         "issue_mapping_gitlab_project_id_gitlab_issue_id_pk": {
           "name": "issue_mapping_gitlab_project_id_gitlab_issue_id_pk",
-          "columns": [
-            "gitlab_project_id",
-            "gitlab_issue_id"
-          ]
+          "columns": ["gitlab_project_id", "gitlab_issue_id"]
         }
       },
       "uniqueConstraints": {},

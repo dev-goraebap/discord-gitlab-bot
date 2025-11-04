@@ -3,7 +3,7 @@ services:
     image: hohocobot:${APP_VERSION:-latest}
     container_name: hohocobot
     ports:
-      - "8010:3000"
+      - '8010:3000'
     volumes:
       - ./.env:/app/.env:ro
     environment:
