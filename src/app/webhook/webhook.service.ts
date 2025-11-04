@@ -96,7 +96,7 @@ ${issue.description || '*(설명 없음)*'}
     try {
       const issue = event.object_attributes;
       const project = event.project;
-      const changes = event.changes;
+      const user = event.user;
 
       // DB에서 매핑 조회
       const mapping = await IssueMappingEntity.findByGitlabIssue(
@@ -111,72 +111,32 @@ ${issue.description || '*(설명 없음)*'}
         return { message: 'No mapping found for this issue' };
       }
 
-      // 변경사항 포맷팅
-      const changeMessages: string[] = [];
+      // 현재 이슈 상태 전체를 포맷팅 (생성 시와 동일)
+      const threadTitle = `[${project.name}] ${issue.title}`;
 
-      if (changes.title) {
-        changeMessages.push(
-          `📝 **제목**: ~~${changes.title.previous}~~ → **${changes.title.current}**`,
-        );
-      }
-
-      if (changes.description) {
-        changeMessages.push(`📋 **설명**: 내용이 변경되었습니다`);
-      }
-
-      if (changes.labels) {
-        const prevLabels = changes.labels.previous || [];
-        const currLabels = changes.labels.current || [];
-        const added = currLabels.filter((l: any) => !prevLabels.includes(l));
-        const removed = prevLabels.filter((l: any) => !currLabels.includes(l));
-
-        if (added.length > 0) {
-          changeMessages.push(
-            `🏷️ **라벨 추가**: ${added.map((l: any) => l.title).join(', ')}`,
-          );
-        }
-        if (removed.length > 0) {
-          changeMessages.push(
-            `🏷️ **라벨 제거**: ${removed.map((l: any) => l.title).join(', ')}`,
-          );
-        }
-      }
-
-      if (changes.due_date) {
-        const prevDate = changes.due_date.previous || '지정 안됨';
-        const currDate = changes.due_date.current || '지정 안됨';
-        changeMessages.push(`📅 **마감일**: ${prevDate} → ${currDate}`);
-      }
-
-      if (changes.assignee_ids) {
-        changeMessages.push(`👤 **담당자**: 변경됨`);
-      }
-
-      // 변경사항이 없으면 무시
-      if (changeMessages.length === 0) {
-        return { message: 'No significant changes' };
-      }
-
-      // Discord 스레드에 업데이트 메시지 전송
-      const updateMessage = `
-🔄 **이슈 업데이트**
-
-${changeMessages.join('\n')}
+      const threadContent = `
+📦 **레포**: ${project.name}
+👤 **담당**: ${user.name} (@${user.username})
+${issue.labels && issue.labels.length > 0 ? `🏷️ **라벨**: ${issue.labels.map((l) => l.title).join(', ')}` : ''}
+📅 **마감일자**: ${issue.due_date || '지정되지 않음'}
+${issue.description || '*(설명 없음)*'}
 
 [깃렙에서 이슈 보기](${issue.url})
 `.trim();
 
-      await this.discordService.sendThreadMessage(
+      // Discord 포럼 포스트 업데이트 (제목 + 내용)
+      await this.discordService.updateForumPost(
         mapping.discordThreadId,
-        updateMessage,
+        threadTitle,
+        threadContent,
       );
 
       this.logger.log(
-        `✅ 이슈 업데이트 알림 전송 완료: GitLab(${project.id}/${issue.iid})`,
+        `✅ 포럼 포스트 업데이트 완료: GitLab(${project.id}/${issue.iid}) → Discord(${mapping.discordThreadId})`,
       );
 
       return {
-        message: 'Issue update posted to thread successfully',
+        message: 'Forum post updated successfully',
         threadId: mapping.discordThreadId,
       };
     } catch (error) {

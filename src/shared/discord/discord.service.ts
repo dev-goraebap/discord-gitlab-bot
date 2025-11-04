@@ -39,7 +39,11 @@ export class DiscordService {
     }
   }
 
-  async sendThreadMessage(threadId: string, content: string): Promise<void> {
+  async updateForumPost(
+    threadId: string,
+    title: string,
+    content: string,
+  ): Promise<void> {
     const client = this.discordBot.getClient();
 
     try {
@@ -49,10 +53,22 @@ export class DiscordService {
         throw new Error('스레드를 찾을 수 없거나 스레드가 아닙니다.');
       }
 
-      await thread.send(content);
-      this.logger.log(`✅ 스레드 메시지 전송 완료: ${threadId}`);
+      // 스레드의 첫 메시지(starter message) 가져오기
+      const starterMessage = await thread.fetchStarterMessage();
+
+      if (!starterMessage) {
+        throw new Error('포럼 포스트의 첫 메시지를 찾을 수 없습니다.');
+      }
+
+      // 메시지 내용 수정
+      await starterMessage.edit(content);
+
+      // 스레드 제목 수정
+      await thread.setName(title.slice(0, 100));
+
+      this.logger.log(`✅ 포럼 포스트 수정 완료: ${thread.name}`);
     } catch (error) {
-      this.logger.error('❌ 스레드 메시지 전송 실패:', error);
+      this.logger.error('❌ 포럼 포스트 수정 실패:', error);
       throw error;
     }
   }
