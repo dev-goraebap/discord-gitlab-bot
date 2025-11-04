@@ -29,15 +29,15 @@ export class WebhookService {
     try {
       // 이슈 정보 추출
       const issue = event.object_attributes;
-      const repository = event.repository || event.project;
+      const project = event.project;
       const user = event.user;
 
       // 포럼 포스트 제목
-      const threadTitle = `[${repository.name}] ${issue.title}`;
+      const threadTitle = `[${project.name}] ${issue.title}`;
 
       // 포럼 포스트 본문
       const threadContent = `
-📦 **레포**: ${repository.name}
+📦 **레포**: ${project.name}
 👤 **담당**: ${user.name} (@${user.username})
 ${issue.labels && issue.labels.length > 0 ? `🏷️ **라벨**: ${issue.labels.map((l) => l.title).join(', ')}` : ''}
 📅 **마감일자**: ${issue.due_date || '지정되지 않음'}
@@ -55,7 +55,7 @@ ${issue.description || '*(설명 없음)*'}
 
       // DB에 매핑 저장
       const mapping = IssueMappingEntity.create({
-        gitlabProjectId: repository.id,
+        gitlabProjectId: project.id,
         gitlabIssueId: issue.iid,
         discordThreadId: threadId,
         gitlabAuthorId: user.id,
@@ -65,7 +65,7 @@ ${issue.description || '*(설명 없음)*'}
       await mapping.save();
 
       this.logger.log(
-        `✅ DB 매핑 저장 완료: GitLab(${repository.id}/${issue.iid}) → Discord(${threadId})`,
+        `✅ DB 매핑 저장 완료: GitLab(${project.id}/${issue.iid}) → Discord(${threadId})`,
       );
 
       return {
