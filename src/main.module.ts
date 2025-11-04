@@ -1,8 +1,8 @@
-import {Module} from "@nestjs/common";
-import {AppModule} from "./app/app.module";
+import { Module } from '@nestjs/common';
+import { AppModule } from './app/app.module';
+import { DrizzleModule } from './shared/drizzle';
 
 @Module({
-    imports: [AppModule]
+  imports: [DrizzleModule, AppModule],
 })
-export class MainModule {
-}
+export class MainModule {}
