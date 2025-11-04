@@ -1,0 +1,18 @@
+services:
+  hohocobot:
+    image: hohocobot:${APP_VERSION:-latest}
+    container_name: hohocobot
+    ports:
+      - "8010:3000"
+    volumes:
+      - ./.env:/app/.env:ro
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    networks:
+      - my-network
+
+networks:
+  my-network:
+    name: my-network
+    external: true
