@@ -23,6 +23,9 @@ export class WebhookService {
       `📥 이슈 생성 이벤트 수신: ${event.object_attributes.title}`,
     );
 
+    // 디버그: 들어온 이벤트 전체 확인
+    this.logger.debug('🔍 수신된 이벤트 전체:', JSON.stringify(event, null, 2));
+
     try {
       // 이슈 정보 추출
       const issue = event.object_attributes;
@@ -34,18 +37,21 @@ export class WebhookService {
 
       // 포럼 포스트 본문
       const threadContent = `
-        📦 **레포**: ${repository.name}
-        👤 **담당**: ${user.name} (@${user.username})
-        ${issue.labels && issue.labels.length > 0 ? `🏷️ **라벨**: ${issue.labels.map((l) => l.title).join(', ')}` : ''}
-        📅 **마감일자**: ${issue.due_date || '지정되지 않음'}
-        ${issue.description || '*(설명 없음)*'}
-        
-        [깃렙에서 이슈 보기](${issue.url})
-        `.trim();
+📦 **레포**: ${repository.name}
+👤 **담당**: ${user.name} (@${user.username})
+${issue.labels && issue.labels.length > 0 ? `🏷️ **라벨**: ${issue.labels.map((l) => l.title).join(', ')}` : ''}
+📅 **마감일자**: ${issue.due_date || '지정되지 않음'}
+${issue.description || '*(설명 없음)*'}
+
+[깃렙에서 이슈 보기](${issue.url})
+`.trim();
 
       // 포럼 스레드 생성
       const threadId =
         await this.discordService.createForumPost(threadTitle, threadContent);
+
+      // 디버그: threadId 확인
+      this.logger.debug('✅ 생성된 threadId:', threadId);
 
       // DB에 매핑 저장
       const mapping = IssueMappingEntity.create({
@@ -55,6 +61,7 @@ export class WebhookService {
         gitlabAuthorId: user.id,
         gitlabAuthorName: user.name,
       });
+
       await mapping.save();
 
       this.logger.log(
