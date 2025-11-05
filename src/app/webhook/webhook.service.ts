@@ -70,7 +70,6 @@ export class WebhookService {
 
       // 포럼 포스트 본문
       const threadContent = `
-📦 **레포**: ${projectInfo.koreanName}
 👤 **담당**: ${assigneeText}
 📅 **마감일자**: ${issue.due_date || '지정되지 않음'}
 ${issue.description || '*(설명 없음)*'}
@@ -162,7 +161,6 @@ ${issue.description || '*(설명 없음)*'}
           : '지정되지 않음';
 
       const threadContent = `
-📦 **레포**: ${projectInfo.koreanName}
 👤 **담당**: ${assigneeText}
 📅 **마감일자**: ${issue.due_date || '지정되지 않음'}
 ${issue.description || '*(설명 없음)*'}
