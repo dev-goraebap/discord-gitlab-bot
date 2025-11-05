@@ -163,6 +163,13 @@ ${issue.description || '*(설명 없음)*'}
       const assignee = assignees.length > 0 ? assignees[0] : user;
       const assigneeText = `${assignee.name} (@${assignee.username})`;
 
+      // 디버그: 담당자 정보 확인
+      this.logger.debug('🔍 담당자 정보 (UPDATE):', {
+        assignees: assignees,
+        selectedAssignee: assignee,
+        assigneeText: assigneeText,
+      });
+
       const threadContent = `
 👤 **담당**: ${assigneeText}
 📅 **마감일자**: ${issue.due_date || '지정되지 않음'}
