@@ -188,10 +188,7 @@ ${issue.description || '*(설명 없음)*'}
         });
 
       // Discord 스레드에 Embed 전송
-      await this.discordService.sendThreadEmbed(
-        mapping.discordThreadId,
-        embed,
-      );
+      await this.discordService.sendThreadEmbed(mapping.discordThreadId, embed);
 
       this.logger.log(
         `✅ 이슈 종료 알림 전송 완료: GitLab(${project.id}/${issue.iid})`,
@@ -243,10 +240,7 @@ ${issue.description || '*(설명 없음)*'}
         });
 
       // Discord 스레드에 Embed 전송
-      await this.discordService.sendThreadEmbed(
-        mapping.discordThreadId,
-        embed,
-      );
+      await this.discordService.sendThreadEmbed(mapping.discordThreadId, embed);
 
       this.logger.log(
         `✅ 이슈 재오픈 알림 전송 완료: GitLab(${project.id}/${issue.iid})`,

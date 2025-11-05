@@ -72,7 +72,9 @@ export class IssueMappingEntity {
     return IssueMappingEntity.fromRaw(raw);
   }
 
-  async updateState(newState: 'opened' | 'closed'): Promise<IssueMappingEntity> {
+  async updateState(
+    newState: 'opened' | 'closed',
+  ): Promise<IssueMappingEntity> {
     const [raw] = await DrizzleContext.db()
       .update(issueMappingTable)
       .set({ state: newState })
