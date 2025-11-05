@@ -66,6 +66,13 @@ export class WebhookService {
       const assignee = assignees.length > 0 ? assignees[0] : user;
       const assigneeText = `${assignee.name} (@${assignee.username})`;
 
+      // 디버그: 담당자 정보 확인
+      this.logger.debug('🔍 담당자 정보:', {
+        assignees: assignees,
+        selectedAssignee: assignee,
+        assigneeText: assigneeText,
+      });
+
       // 포럼 포스트 본문
       const threadContent = `
 👤 **담당**: ${assigneeText}
