@@ -109,8 +109,7 @@ ${issue.description || '*(설명 없음)*'}
         gitlabProjectId: project.id,
         gitlabIssueId: issue.iid,
         discordThreadId: threadId,
-        gitlabAuthorId: user.id,
-        gitlabAuthorName: user.name,
+        gitlabAssigneeId: assignee.id,
       });
 
       await mapping.save();
@@ -199,6 +198,9 @@ ${issue.description || '*(설명 없음)*'}
         threadContent,
         tagIds,
       );
+
+      // DB 담당자 업데이트
+      await mapping.updateAssignee(assignee.id);
 
       this.logger.log(
         `✅ 포럼 포스트 업데이트 완료: GitLab(${project.id}/${issue.iid}) → Discord(${mapping.discordThreadId})`,
