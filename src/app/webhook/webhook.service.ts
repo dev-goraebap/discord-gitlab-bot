@@ -10,11 +10,9 @@ export class WebhookService {
   constructor(private discordService: DiscordService) {}
 
   private parseProjectInfo(project: any): {
-    tags: string[];
     koreanName: string;
   } {
     return {
-      tags: project.topics || [],
       koreanName: project.description || project.name,
     };
   }
@@ -67,18 +65,17 @@ export class WebhookService {
       const threadContent = `
 📦 **레포**: ${projectInfo.koreanName}
 👤 **담당**: ${user.name} (@${user.username})
-${issue.labels && issue.labels.length > 0 ? `🏷️ **라벨**: ${issue.labels.map((l) => l.title).join(', ')}` : ''}
 📅 **마감일자**: ${issue.due_date || '지정되지 않음'}
 ${issue.description || '*(설명 없음)*'}
 
 [깃렙에서 이슈 보기](${issue.url})
 `.trim();
 
-      // Discord 태그 생성/조회 (topics + opened)
+      // Discord 태그 생성/조회 (labels + opened)
       const tagIds: string[] = [];
-      for (const tagName of projectInfo.tags) {
-        if (tagName) {
-          const tagId = await this.discordService.getOrCreateTag(tagName);
+      if (issue.labels && Array.isArray(issue.labels)) {
+        for (const label of issue.labels) {
+          const tagId = await this.discordService.getOrCreateTag(label.title);
           tagIds.push(tagId);
         }
       }
@@ -153,18 +150,17 @@ ${issue.description || '*(설명 없음)*'}
       const threadContent = `
 📦 **레포**: ${projectInfo.koreanName}
 👤 **담당**: ${user.name} (@${user.username})
-${issue.labels && issue.labels.length > 0 ? `🏷️ **라벨**: ${issue.labels.map((l) => l.title).join(', ')}` : ''}
 📅 **마감일자**: ${issue.due_date || '지정되지 않음'}
 ${issue.description || '*(설명 없음)*'}
 
 [깃렙에서 이슈 보기](${issue.url})
 `.trim();
 
-      // Discord 태그 생성/조회 (topics + state)
+      // Discord 태그 생성/조회 (labels + state)
       const tagIds: string[] = [];
-      for (const tagName of projectInfo.tags) {
-        if (tagName) {
-          const tagId = await this.discordService.getOrCreateTag(tagName);
+      if (issue.labels && Array.isArray(issue.labels)) {
+        for (const label of issue.labels) {
+          const tagId = await this.discordService.getOrCreateTag(label.title);
           tagIds.push(tagId);
         }
       }
@@ -221,14 +217,11 @@ ${issue.description || '*(설명 없음)*'}
       // DB 상태 업데이트
       await mapping.updateState('closed');
 
-      // 프로젝트 정보 파싱
-      const projectInfo = this.parseProjectInfo(project);
-
-      // Discord 태그 생성/조회 (topics + closed)
+      // Discord 태그 생성/조회 (labels + closed)
       const tagIds: string[] = [];
-      for (const tagName of projectInfo.tags) {
-        if (tagName) {
-          const tagId = await this.discordService.getOrCreateTag(tagName);
+      if (issue.labels && Array.isArray(issue.labels)) {
+        for (const label of issue.labels) {
+          const tagId = await this.discordService.getOrCreateTag(label.title);
           tagIds.push(tagId);
         }
       }
@@ -295,14 +288,11 @@ ${issue.description || '*(설명 없음)*'}
       // DB 상태 업데이트
       await mapping.updateState('opened');
 
-      // 프로젝트 정보 파싱
-      const projectInfo = this.parseProjectInfo(project);
-
-      // Discord 태그 생성/조회 (topics + opened)
+      // Discord 태그 생성/조회 (labels + opened)
       const tagIds: string[] = [];
-      for (const tagName of projectInfo.tags) {
-        if (tagName) {
-          const tagId = await this.discordService.getOrCreateTag(tagName);
+      if (issue.labels && Array.isArray(issue.labels)) {
+        for (const label of issue.labels) {
+          const tagId = await this.discordService.getOrCreateTag(label.title);
           tagIds.push(tagId);
         }
       }
