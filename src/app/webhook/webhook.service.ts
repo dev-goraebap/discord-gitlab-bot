@@ -61,10 +61,17 @@ export class WebhookService {
       // 포럼 포스트 제목 (한글 프로젝트명 우선)
       const threadTitle = `[${projectInfo.koreanName}] ${issue.title}`;
 
+      // 담당자 정보 포맷팅
+      const assignees = issue.assignees || [];
+      const assigneeText =
+        assignees.length > 0
+          ? assignees.map((a) => `${a.name} (@${a.username})`).join(', ')
+          : '지정되지 않음';
+
       // 포럼 포스트 본문
       const threadContent = `
 📦 **레포**: ${projectInfo.koreanName}
-👤 **담당**: ${user.name} (@${user.username})
+👤 **담당**: ${assigneeText}
 📅 **마감일자**: ${issue.due_date || '지정되지 않음'}
 ${issue.description || '*(설명 없음)*'}
 
@@ -147,9 +154,16 @@ ${issue.description || '*(설명 없음)*'}
       // 현재 이슈 상태 전체를 포맷팅 (한글 프로젝트명 우선)
       const threadTitle = `[${projectInfo.koreanName}] ${issue.title}`;
 
+      // 담당자 정보 포맷팅
+      const assignees = issue.assignees || [];
+      const assigneeText =
+        assignees.length > 0
+          ? assignees.map((a) => `${a.name} (@${a.username})`).join(', ')
+          : '지정되지 않음';
+
       const threadContent = `
 📦 **레포**: ${projectInfo.koreanName}
-👤 **담당**: ${user.name} (@${user.username})
+👤 **담당**: ${assigneeText}
 📅 **마감일자**: ${issue.due_date || '지정되지 않음'}
 ${issue.description || '*(설명 없음)*'}
 
