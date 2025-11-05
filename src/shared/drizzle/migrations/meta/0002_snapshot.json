@@ -1,0 +1,109 @@
+{
+  "id": "dabd185d-6bc0-4976-b1f7-484244946fd3",
+  "prevId": "5ebd8ff4-f26b-494b-bb36-816bf0ee93fd",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.issue_mapping": {
+      "name": "issue_mapping",
+      "schema": "",
+      "columns": {
+        "gitlab_project_id": {
+          "name": "gitlab_project_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "gitlab_issue_id": {
+          "name": "gitlab_issue_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "discord_thread_id": {
+          "name": "discord_thread_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "gitlab_assignee_id": {
+          "name": "gitlab_assignee_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "state": {
+          "name": "state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'opened'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "issue_mapping_gitlab_project_id_gitlab_issue_id_pk": {
+          "name": "issue_mapping_gitlab_project_id_gitlab_issue_id_pk",
+          "columns": [
+            "gitlab_project_id",
+            "gitlab_issue_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.user_mapping": {
+      "name": "user_mapping",
+      "schema": "",
+      "columns": {
+        "discord_user_id": {
+          "name": "discord_user_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "gitlab_user_id": {
+          "name": "gitlab_user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "gitlab_username": {
+          "name": "gitlab_username",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
