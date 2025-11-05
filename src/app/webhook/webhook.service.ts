@@ -13,19 +13,9 @@ export class WebhookService {
     tags: string[];
     koreanName: string;
   } {
-    const description = project.description;
-
-    if (description && description.includes(':')) {
-      const [tag1, tag2] = description.split(':');
-      return {
-        tags: [tag1.trim(), tag2.trim()],
-        koreanName: tag2.trim() || project.name,
-      };
-    }
-
     return {
-      tags: [],
-      koreanName: project.name,
+      tags: project.topics || [],
+      koreanName: project.description || project.name,
     };
   }
 
@@ -84,7 +74,7 @@ ${issue.description || '*(설명 없음)*'}
 [깃렙에서 이슈 보기](${issue.url})
 `.trim();
 
-      // Discord 태그 생성/조회
+      // Discord 태그 생성/조회 (topics + opened)
       const tagIds: string[] = [];
       for (const tagName of projectInfo.tags) {
         if (tagName) {
@@ -92,6 +82,9 @@ ${issue.description || '*(설명 없음)*'}
           tagIds.push(tagId);
         }
       }
+      // "opened" 태그 추가
+      const openedTagId = await this.discordService.getOrCreateTag('opened');
+      tagIds.push(openedTagId);
 
       // 포럼 스레드 생성
       const threadId = await this.discordService.createForumPost(
@@ -167,7 +160,7 @@ ${issue.description || '*(설명 없음)*'}
 [깃렙에서 이슈 보기](${issue.url})
 `.trim();
 
-      // Discord 태그 생성/조회
+      // Discord 태그 생성/조회 (topics + state)
       const tagIds: string[] = [];
       for (const tagName of projectInfo.tags) {
         if (tagName) {
@@ -175,6 +168,11 @@ ${issue.description || '*(설명 없음)*'}
           tagIds.push(tagId);
         }
       }
+      // DB state 기반 태그 추가
+      const stateTagId = await this.discordService.getOrCreateTag(
+        mapping.state,
+      );
+      tagIds.push(stateTagId);
 
       // Discord 포럼 포스트 업데이트 (제목 + 내용 + 태그)
       await this.discordService.updateForumPost(
@@ -222,6 +220,28 @@ ${issue.description || '*(설명 없음)*'}
 
       // DB 상태 업데이트
       await mapping.updateState('closed');
+
+      // 프로젝트 정보 파싱
+      const projectInfo = this.parseProjectInfo(project);
+
+      // Discord 태그 생성/조회 (topics + closed)
+      const tagIds: string[] = [];
+      for (const tagName of projectInfo.tags) {
+        if (tagName) {
+          const tagId = await this.discordService.getOrCreateTag(tagName);
+          tagIds.push(tagId);
+        }
+      }
+      // "closed" 태그 추가
+      const closedTagId = await this.discordService.getOrCreateTag('closed');
+      tagIds.push(closedTagId);
+
+      // Discord 스레드 태그 업데이트
+      const client = this.discordService['discordBot'].getClient();
+      const thread = await client.channels.fetch(mapping.discordThreadId);
+      if (thread && thread.isThread()) {
+        await thread.setAppliedTags(tagIds);
+      }
 
       // Discord Embed 생성
       const embed = new EmbedBuilder()
@@ -274,6 +294,28 @@ ${issue.description || '*(설명 없음)*'}
 
       // DB 상태 업데이트
       await mapping.updateState('opened');
+
+      // 프로젝트 정보 파싱
+      const projectInfo = this.parseProjectInfo(project);
+
+      // Discord 태그 생성/조회 (topics + opened)
+      const tagIds: string[] = [];
+      for (const tagName of projectInfo.tags) {
+        if (tagName) {
+          const tagId = await this.discordService.getOrCreateTag(tagName);
+          tagIds.push(tagId);
+        }
+      }
+      // "opened" 태그 추가
+      const openedTagId = await this.discordService.getOrCreateTag('opened');
+      tagIds.push(openedTagId);
+
+      // Discord 스레드 태그 업데이트
+      const client = this.discordService['discordBot'].getClient();
+      const thread = await client.channels.fetch(mapping.discordThreadId);
+      if (thread && thread.isThread()) {
+        await thread.setAppliedTags(tagIds);
+      }
 
       // Discord Embed 생성
       const embed = new EmbedBuilder()
