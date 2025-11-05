@@ -62,7 +62,7 @@ export class WebhookService {
       const threadTitle = `[${projectInfo.koreanName}] ${issue.title}`;
 
       // 담당자 정보 포맷팅 (첫 번째 assignee 우선, 없으면 이벤트 발생시킨 user)
-      const assignees = issue.assignees || [];
+      const assignees = event.assignees || [];
       const assignee = assignees.length > 0 ? assignees[0] : user;
       const assigneeText = `${assignee.name} (@${assignee.username})`;
 
@@ -159,7 +159,7 @@ ${issue.description || '*(설명 없음)*'}
       const threadTitle = `[${projectInfo.koreanName}] ${issue.title}`;
 
       // 담당자 정보 포맷팅 (첫 번째 assignee 우선, 없으면 이벤트 발생시킨 user)
-      const assignees = issue.assignees || [];
+      const assignees = event.assignees || [];
       const assignee = assignees.length > 0 ? assignees[0] : user;
       const assigneeText = `${assignee.name} (@${assignee.username})`;
 
