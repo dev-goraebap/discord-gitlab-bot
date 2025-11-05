@@ -12,7 +12,11 @@ export class DiscordService {
     private configService: ConfigService,
   ) {}
 
-  async createForumPost(title: string, content: string): Promise<string> {
+  async createForumPost(
+    title: string,
+    content: string,
+    appliedTags?: string[],
+  ): Promise<string> {
     const client = this.discordBot.getClient();
     const forumChannelId = this.configService.getOrThrow<string>(
       'DISCORD_FORUM_CHANNEL_ID',
@@ -30,6 +34,7 @@ export class DiscordService {
         message: {
           content: content,
         },
+        appliedTags: appliedTags || [],
       });
 
       this.logger.log(`✅ 포럼 포스트 생성 완료: ${thread.name}`);
@@ -44,6 +49,7 @@ export class DiscordService {
     threadId: string,
     title: string,
     content: string,
+    appliedTags?: string[],
   ): Promise<void> {
     const client = this.discordBot.getClient();
 
@@ -66,6 +72,11 @@ export class DiscordService {
 
       // 스레드 제목 수정
       await thread.setName(title.slice(0, 100));
+
+      // 태그 수정 (제공된 경우)
+      if (appliedTags) {
+        await thread.setAppliedTags(appliedTags);
+      }
 
       this.logger.log(`✅ 포럼 포스트 수정 완료: ${thread.name}`);
     } catch (error) {
@@ -106,6 +117,56 @@ export class DiscordService {
       this.logger.log(`✅ 스레드 삭제 완료: ${threadId}`);
     } catch (error) {
       this.logger.error('❌ 스레드 삭제 실패:', error);
+      throw error;
+    }
+  }
+
+  async getOrCreateTag(tagName: string): Promise<string> {
+    const client = this.discordBot.getClient();
+    const forumChannelId = this.configService.getOrThrow<string>(
+      'DISCORD_FORUM_CHANNEL_ID',
+    );
+
+    try {
+      const forumChannel = await client.channels.fetch(forumChannelId);
+
+      if (!forumChannel || !forumChannel.isThreadOnly()) {
+        throw new Error('포럼 채널을 찾을 수 없거나 포럼 채널이 아닙니다.');
+      }
+
+      // 기존 태그 조회
+      const existingTag = forumChannel.availableTags.find(
+        (tag) => tag.name === tagName,
+      );
+
+      if (existingTag) {
+        return existingTag.id;
+      }
+
+      // 태그 생성
+      await forumChannel.setAvailableTags([
+        ...forumChannel.availableTags,
+        { name: tagName, emoji: null },
+      ]);
+
+      // 생성된 태그 조회
+      const updatedChannel = await client.channels.fetch(forumChannelId);
+      if (!updatedChannel || !updatedChannel.isThreadOnly()) {
+        throw new Error('포럼 채널을 찾을 수 없습니다.');
+      }
+
+      const newTag = updatedChannel.availableTags.find(
+        (tag) => tag.name === tagName,
+      );
+
+      if (!newTag) {
+        throw new Error(`태그 생성 실패: ${tagName}`);
+      }
+
+      this.logger.log(`✅ 포럼 태그 생성 완료: ${tagName}`);
+      return newTag.id;
+    } catch (error) {
+      this.logger.error(`❌ 포럼 태그 처리 실패: ${tagName}`, error);
       throw error;
     }
   }

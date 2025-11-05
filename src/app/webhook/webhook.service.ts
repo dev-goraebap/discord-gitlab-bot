@@ -9,6 +9,26 @@ export class WebhookService {
 
   constructor(private discordService: DiscordService) {}
 
+  private parseProjectInfo(project: any): {
+    tags: string[];
+    koreanName: string;
+  } {
+    const description = project.description;
+
+    if (description && description.includes(':')) {
+      const [tag1, tag2] = description.split(':');
+      return {
+        tags: [tag1.trim(), tag2.trim()],
+        koreanName: tag2.trim() || project.name,
+      };
+    }
+
+    return {
+      tags: [],
+      koreanName: project.name,
+    };
+  }
+
   async handleGitlabEvent(event: any) {
     // 이슈 이벤트만 처리
     if (event.object_kind !== 'issue') {
@@ -47,12 +67,15 @@ export class WebhookService {
       const project = event.project;
       const user = event.user;
 
-      // 포럼 포스트 제목
-      const threadTitle = `[${project.name}] ${issue.title}`;
+      // 프로젝트 정보 파싱
+      const projectInfo = this.parseProjectInfo(project);
+
+      // 포럼 포스트 제목 (한글 프로젝트명 우선)
+      const threadTitle = `[${projectInfo.koreanName}] ${issue.title}`;
 
       // 포럼 포스트 본문
       const threadContent = `
-📦 **레포**: ${project.name}
+📦 **레포**: ${projectInfo.koreanName}
 👤 **담당**: ${user.name} (@${user.username})
 ${issue.labels && issue.labels.length > 0 ? `🏷️ **라벨**: ${issue.labels.map((l) => l.title).join(', ')}` : ''}
 📅 **마감일자**: ${issue.due_date || '지정되지 않음'}
@@ -61,10 +84,20 @@ ${issue.description || '*(설명 없음)*'}
 [깃렙에서 이슈 보기](${issue.url})
 `.trim();
 
+      // Discord 태그 생성/조회
+      const tagIds: string[] = [];
+      for (const tagName of projectInfo.tags) {
+        if (tagName) {
+          const tagId = await this.discordService.getOrCreateTag(tagName);
+          tagIds.push(tagId);
+        }
+      }
+
       // 포럼 스레드 생성
       const threadId = await this.discordService.createForumPost(
         threadTitle,
         threadContent,
+        tagIds,
       );
 
       // 디버그: threadId 확인
@@ -118,11 +151,14 @@ ${issue.description || '*(설명 없음)*'}
         return { message: 'No mapping found for this issue' };
       }
 
-      // 현재 이슈 상태 전체를 포맷팅 (생성 시와 동일)
-      const threadTitle = `[${project.name}] ${issue.title}`;
+      // 프로젝트 정보 파싱
+      const projectInfo = this.parseProjectInfo(project);
+
+      // 현재 이슈 상태 전체를 포맷팅 (한글 프로젝트명 우선)
+      const threadTitle = `[${projectInfo.koreanName}] ${issue.title}`;
 
       const threadContent = `
-📦 **레포**: ${project.name}
+📦 **레포**: ${projectInfo.koreanName}
 👤 **담당**: ${user.name} (@${user.username})
 ${issue.labels && issue.labels.length > 0 ? `🏷️ **라벨**: ${issue.labels.map((l) => l.title).join(', ')}` : ''}
 📅 **마감일자**: ${issue.due_date || '지정되지 않음'}
@@ -131,11 +167,21 @@ ${issue.description || '*(설명 없음)*'}
 [깃렙에서 이슈 보기](${issue.url})
 `.trim();
 
-      // Discord 포럼 포스트 업데이트 (제목 + 내용)
+      // Discord 태그 생성/조회
+      const tagIds: string[] = [];
+      for (const tagName of projectInfo.tags) {
+        if (tagName) {
+          const tagId = await this.discordService.getOrCreateTag(tagName);
+          tagIds.push(tagId);
+        }
+      }
+
+      // Discord 포럼 포스트 업데이트 (제목 + 내용 + 태그)
       await this.discordService.updateForumPost(
         mapping.discordThreadId,
         threadTitle,
         threadContent,
+        tagIds,
       );
 
       this.logger.log(
