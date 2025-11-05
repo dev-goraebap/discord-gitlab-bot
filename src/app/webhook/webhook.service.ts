@@ -64,7 +64,7 @@ export class WebhookService {
       // 담당자 정보 포맷팅 (첫 번째 assignee 우선, 없으면 이벤트 발생시킨 user)
       const assignees = event.assignees || [];
       const assignee = assignees.length > 0 ? assignees[0] : user;
-      const assigneeText = `${assignee.name} (@${assignee.username})`;
+      const assigneeText = `${assignee.name}`;
 
       // 디버그: 담당자 정보 확인
       this.logger.debug('🔍 담당자 정보:', {
