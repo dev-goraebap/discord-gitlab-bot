@@ -5,16 +5,14 @@ export type CreateIssueMappingParam = {
   readonly gitlabProjectId: number;
   readonly gitlabIssueId: number;
   readonly discordThreadId: string;
-  readonly gitlabAuthorId: number;
-  readonly gitlabAuthorName: string;
+  readonly gitlabAssigneeId: number | null;
 };
 
 export class IssueMappingEntity {
   readonly gitlabProjectId!: number;
   readonly gitlabIssueId!: number;
   readonly discordThreadId!: string;
-  readonly gitlabAuthorId!: number | null;
-  readonly gitlabAuthorName!: string | null;
+  readonly gitlabAssigneeId!: number | null;
   readonly state!: string;
   readonly createdAt!: Date | null;
 
@@ -23,8 +21,7 @@ export class IssueMappingEntity {
       gitlabProjectId: param.gitlabProjectId,
       gitlabIssueId: param.gitlabIssueId,
       discordThreadId: param.discordThreadId,
-      gitlabAuthorId: param.gitlabAuthorId,
-      gitlabAuthorName: param.gitlabAuthorName,
+      gitlabAssigneeId: param.gitlabAssigneeId,
       state: 'opened',
       createdAt: new Date(),
     } satisfies Partial<IssueMappingEntity>);
@@ -37,8 +34,7 @@ export class IssueMappingEntity {
       gitlabProjectId: data.gitlabProjectId,
       gitlabIssueId: data.gitlabIssueId,
       discordThreadId: data.discordThreadId,
-      gitlabAuthorId: data.gitlabAuthorId,
-      gitlabAuthorName: data.gitlabAuthorName,
+      gitlabAssigneeId: data.gitlabAssigneeId,
       state: data.state,
       createdAt: data.createdAt,
     } satisfies Partial<IssueMappingEntity>);
@@ -64,8 +60,7 @@ export class IssueMappingEntity {
         gitlabProjectId: this.gitlabProjectId,
         gitlabIssueId: this.gitlabIssueId,
         discordThreadId: this.discordThreadId,
-        gitlabAuthorId: this.gitlabAuthorId,
-        gitlabAuthorName: this.gitlabAuthorName,
+        gitlabAssigneeId: this.gitlabAssigneeId,
         state: this.state,
       })
       .returning();
@@ -78,6 +73,22 @@ export class IssueMappingEntity {
     const [raw] = await DrizzleContext.db()
       .update(issueMappingTable)
       .set({ state: newState })
+      .where(
+        and(
+          eq(issueMappingTable.gitlabProjectId, this.gitlabProjectId),
+          eq(issueMappingTable.gitlabIssueId, this.gitlabIssueId),
+        ),
+      )
+      .returning();
+    return IssueMappingEntity.fromRaw(raw);
+  }
+
+  async updateAssignee(
+    assigneeId: number | null,
+  ): Promise<IssueMappingEntity> {
+    const [raw] = await DrizzleContext.db()
+      .update(issueMappingTable)
+      .set({ gitlabAssigneeId: assigneeId })
       .where(
         and(
           eq(issueMappingTable.gitlabProjectId, this.gitlabProjectId),

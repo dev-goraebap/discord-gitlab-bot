@@ -10,22 +10,10 @@ export class WebhookService {
   constructor(private discordService: DiscordService) {}
 
   private parseProjectInfo(project: any): {
-    tags: string[];
     koreanName: string;
   } {
-    const description = project.description;
-
-    if (description && description.includes(':')) {
-      const [tag1, tag2] = description.split(':');
-      return {
-        tags: [tag1.trim(), tag2.trim()],
-        koreanName: tag2.trim() || project.name,
-      };
-    }
-
     return {
-      tags: [],
-      koreanName: project.name,
+      koreanName: project.description || project.name,
     };
   }
 
@@ -73,25 +61,38 @@ export class WebhookService {
       // 포럼 포스트 제목 (한글 프로젝트명 우선)
       const threadTitle = `[${projectInfo.koreanName}] ${issue.title}`;
 
+      // 담당자 정보 포맷팅 (첫 번째 assignee 우선, 없으면 이벤트 발생시킨 user)
+      const assignees = event.assignees || [];
+      const assignee = assignees.length > 0 ? assignees[0] : user;
+      const assigneeText = `${assignee.name}`;
+
+      // 디버그: 담당자 정보 확인
+      this.logger.debug('🔍 담당자 정보:', {
+        assignees: assignees,
+        selectedAssignee: assignee,
+        assigneeText: assigneeText,
+      });
+
       // 포럼 포스트 본문
       const threadContent = `
-📦 **레포**: ${projectInfo.koreanName}
-👤 **담당**: ${user.name} (@${user.username})
-${issue.labels && issue.labels.length > 0 ? `🏷️ **라벨**: ${issue.labels.map((l) => l.title).join(', ')}` : ''}
+👤 **담당**: ${assigneeText}
 📅 **마감일자**: ${issue.due_date || '지정되지 않음'}
 ${issue.description || '*(설명 없음)*'}
 
 [깃렙에서 이슈 보기](${issue.url})
 `.trim();
 
-      // Discord 태그 생성/조회
+      // Discord 태그 생성/조회 (labels + opened)
       const tagIds: string[] = [];
-      for (const tagName of projectInfo.tags) {
-        if (tagName) {
-          const tagId = await this.discordService.getOrCreateTag(tagName);
+      if (issue.labels && Array.isArray(issue.labels)) {
+        for (const label of issue.labels) {
+          const tagId = await this.discordService.getOrCreateTag(label.title);
           tagIds.push(tagId);
         }
       }
+      // "opened" 태그 추가
+      const openedTagId = await this.discordService.getOrCreateTag('opened');
+      tagIds.push(openedTagId);
 
       // 포럼 스레드 생성
       const threadId = await this.discordService.createForumPost(
@@ -108,8 +109,7 @@ ${issue.description || '*(설명 없음)*'}
         gitlabProjectId: project.id,
         gitlabIssueId: issue.iid,
         discordThreadId: threadId,
-        gitlabAuthorId: user.id,
-        gitlabAuthorName: user.name,
+        gitlabAssigneeId: assignee.id,
       });
 
       await mapping.save();
@@ -157,24 +157,39 @@ ${issue.description || '*(설명 없음)*'}
       // 현재 이슈 상태 전체를 포맷팅 (한글 프로젝트명 우선)
       const threadTitle = `[${projectInfo.koreanName}] ${issue.title}`;
 
+      // 담당자 정보 포맷팅 (첫 번째 assignee 우선, 없으면 이벤트 발생시킨 user)
+      const assignees = event.assignees || [];
+      const assignee = assignees.length > 0 ? assignees[0] : user;
+      const assigneeText = `${assignee.name} (@${assignee.username})`;
+
+      // 디버그: 담당자 정보 확인
+      this.logger.debug('🔍 담당자 정보 (UPDATE):', {
+        assignees: assignees,
+        selectedAssignee: assignee,
+        assigneeText: assigneeText,
+      });
+
       const threadContent = `
-📦 **레포**: ${projectInfo.koreanName}
-👤 **담당**: ${user.name} (@${user.username})
-${issue.labels && issue.labels.length > 0 ? `🏷️ **라벨**: ${issue.labels.map((l) => l.title).join(', ')}` : ''}
+👤 **담당**: ${assigneeText}
 📅 **마감일자**: ${issue.due_date || '지정되지 않음'}
 ${issue.description || '*(설명 없음)*'}
 
 [깃렙에서 이슈 보기](${issue.url})
 `.trim();
 
-      // Discord 태그 생성/조회
+      // Discord 태그 생성/조회 (labels + state)
       const tagIds: string[] = [];
-      for (const tagName of projectInfo.tags) {
-        if (tagName) {
-          const tagId = await this.discordService.getOrCreateTag(tagName);
+      if (issue.labels && Array.isArray(issue.labels)) {
+        for (const label of issue.labels) {
+          const tagId = await this.discordService.getOrCreateTag(label.title);
           tagIds.push(tagId);
         }
       }
+      // DB state 기반 태그 추가
+      const stateTagId = await this.discordService.getOrCreateTag(
+        mapping.state,
+      );
+      tagIds.push(stateTagId);
 
       // Discord 포럼 포스트 업데이트 (제목 + 내용 + 태그)
       await this.discordService.updateForumPost(
@@ -183,6 +198,9 @@ ${issue.description || '*(설명 없음)*'}
         threadContent,
         tagIds,
       );
+
+      // DB 담당자 업데이트
+      await mapping.updateAssignee(assignee.id);
 
       this.logger.log(
         `✅ 포럼 포스트 업데이트 완료: GitLab(${project.id}/${issue.iid}) → Discord(${mapping.discordThreadId})`,
@@ -222,6 +240,25 @@ ${issue.description || '*(설명 없음)*'}
 
       // DB 상태 업데이트
       await mapping.updateState('closed');
+
+      // Discord 태그 생성/조회 (labels + closed)
+      const tagIds: string[] = [];
+      if (issue.labels && Array.isArray(issue.labels)) {
+        for (const label of issue.labels) {
+          const tagId = await this.discordService.getOrCreateTag(label.title);
+          tagIds.push(tagId);
+        }
+      }
+      // "closed" 태그 추가
+      const closedTagId = await this.discordService.getOrCreateTag('closed');
+      tagIds.push(closedTagId);
+
+      // Discord 스레드 태그 업데이트
+      const client = this.discordService['discordBot'].getClient();
+      const thread = await client.channels.fetch(mapping.discordThreadId);
+      if (thread && thread.isThread()) {
+        await thread.setAppliedTags(tagIds);
+      }
 
       // Discord Embed 생성
       const embed = new EmbedBuilder()
@@ -274,6 +311,25 @@ ${issue.description || '*(설명 없음)*'}
 
       // DB 상태 업데이트
       await mapping.updateState('opened');
+
+      // Discord 태그 생성/조회 (labels + opened)
+      const tagIds: string[] = [];
+      if (issue.labels && Array.isArray(issue.labels)) {
+        for (const label of issue.labels) {
+          const tagId = await this.discordService.getOrCreateTag(label.title);
+          tagIds.push(tagId);
+        }
+      }
+      // "opened" 태그 추가
+      const openedTagId = await this.discordService.getOrCreateTag('opened');
+      tagIds.push(openedTagId);
+
+      // Discord 스레드 태그 업데이트
+      const client = this.discordService['discordBot'].getClient();
+      const thread = await client.channels.fetch(mapping.discordThreadId);
+      if (thread && thread.isThread()) {
+        await thread.setAppliedTags(tagIds);
+      }
 
       // Discord Embed 생성
       const embed = new EmbedBuilder()
