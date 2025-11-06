@@ -53,6 +53,18 @@ export class IssueMappingEntity {
     return result ? IssueMappingEntity.fromRaw(result) : null;
   }
 
+  static async findOpenIssuesByAssignee(
+    assigneeId: number,
+  ): Promise<IssueMappingEntity[]> {
+    const results = await DrizzleContext.db().query.issueMappingTable.findMany({
+      where: and(
+        eq(issueMappingTable.gitlabAssigneeId, assigneeId),
+        eq(issueMappingTable.state, 'opened'),
+      ),
+    });
+    return results.map((result) => IssueMappingEntity.fromRaw(result));
+  }
+
   async save(): Promise<IssueMappingEntity> {
     const [raw] = await DrizzleContext.db()
       .insert(issueMappingTable)
