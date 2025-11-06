@@ -4,6 +4,6 @@ import { DiscordService } from './discord.service';
 
 @Module({
   providers: [DiscordBot, DiscordService],
-  exports: [DiscordService],
+  exports: [DiscordBot, DiscordService],
 })
 export class DiscordModule {}

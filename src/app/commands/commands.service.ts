@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { DiscordBot } from 'src/shared/discord';
 import { GitlabService } from 'src/shared/gitlab';
-import { IssueMappingEntity } from 'src/domain/issue/issue.model';
+import { IssueMappingEntity } from 'src/domain/issue';
 import { UserMappingEntity } from 'src/domain/user/user.model';
 import { EmbedBuilder, REST, Routes } from 'discord.js';
 import { ConfigService } from '@nestjs/config';
@@ -50,6 +50,7 @@ export class CommandsService implements OnModuleInit {
   private setupCommandHandlers() {
     const client = this.discordBot.getClient();
 
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
     client.on('interactionCreate', async (interaction) => {
       if (!interaction.isChatInputCommand()) return;
 
@@ -107,8 +108,8 @@ export class CommandsService implements OnModuleInit {
             .filter((detail) => detail !== null)
             .map(
               (detail, index) =>
-                `**${index + 1}. [${detail!.title}](${detail!.web_url})**\n` +
-                `   🏷️ ${detail!.labels.join(', ') || '라벨 없음'}`,
+                `**${index + 1}. [${detail.title}](${detail.web_url})**\n` +
+                `   🏷️ ${detail.labels.join(', ') || '라벨 없음'}`,
             )
             .join('\n\n'),
         )
